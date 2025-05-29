@@ -169,7 +169,7 @@ ProcessPool::ProcessPool(unsigned int *poolBase, unsigned int poolSize, unsigned
     //Separate metadata and arena for buddy allocator
     if(!embedded)
     {
-        buddy_metadata = malloc(buddy_sizeof((size_t)poolSize, (size_t)alignment));
+        buddy_metadata = (unsigned int *)malloc(buddy_sizeof_alignment((size_t)poolSize, (size_t)alignment));
         buddy = buddy_init_alignment((unsigned char *)buddy_metadata, (unsigned char *)poolBase, (size_t)poolSize, (size_t)alignment);
         if(buddy == NULL)
         {
