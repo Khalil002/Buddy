@@ -72,7 +72,7 @@ ProcessPool& ProcessPool::instance()
     static ProcessPool pool(reinterpret_cast<unsigned int*>(0x20008000),96*1024);
     return pool;
     #else //BMA
-    static ProcessPool pool(reinterpret_cast<unsigned int*>(0x20008000),1024,32, false);
+    static ProcessPool pool(reinterpret_cast<unsigned int*>(0x20008000),1024,128, false);
     return pool;
     #endif //BMA
 
@@ -148,9 +148,9 @@ void ProcessPool::deallocate(unsigned int *ptr)
 }
 
 #ifdef BMA
-unsigned int* reallocate(unsigned int *ptr, unsigned int newSize)
+unsigned int* ProcessPool::reallocate(unsigned int *ptr, unsigned int newSize)
 {
-    return reinterpret_cast<unsigned int*>buddy_realloc(buddy, (void *)ptr, (size_t)newSize);
+    return reinterpret_cast<unsigned int*>(buddy_realloc(buddy, (void *)ptr, (size_t)newSize));
 }
 #endif //BMA
 
@@ -169,7 +169,7 @@ ProcessPool::ProcessPool(unsigned int *poolBase, unsigned int poolSize, unsigned
     //Separate metadata and arena for buddy allocator
     if(!embedded)
     {
-        buddy_metadata = (unsigned int *)malloc(buddy_sizeof_alignment((size_t)poolSize, (size_t)alignment));
+        buddy_metadata =(unsigned int *)malloc(buddy_sizeof_alignment((size_t)poolSize, (size_t)alignment));
         buddy = buddy_init_alignment((unsigned char *)buddy_metadata, (unsigned char *)poolBase, (size_t)poolSize, (size_t)alignment);
         if(buddy == NULL)
         {
@@ -197,13 +197,13 @@ ProcessPool::~ProcessPool()
     #endif //BMA
 }
 
-} //namespace miosix
-
 #ifdef TEST_ALLOC
-
-void printAllocatedBlocks()
+void ProcessPool::printAllocatedBlocks()
 {
-    #ifndef BMA
+    #ifdef BMA
+    buddy_debug(buddy);
+    
+    #else //BMA
     using namespace std;
     map<unsigned int*, unsigned int>::iterator it;
     cout<<endl;
@@ -227,19 +227,23 @@ void printAllocatedBlocks()
             cout<<bitarray[j];
         cout << endl;
     }  
-    #else //BMA
-    buddy_debug(buddy);
     #endif //BMA
 }
+#endif //Test_alloc
+} //namespace miosix
 
-//g++ -m32 -o pp -DTEST_ALLOC -DWITH_PROCESSES -DBMA process_pool.cpp && ./pp
+#ifdef TEST_ALLOC
+
+
+
+//g++ -m32 -o pp -DTEST_ALLOC -DWITH_PROCESSES -DBMA process_pool.cpp buddy_allocator.cpp && ./pp
 int main()
 {
     using namespace miosix;
     ProcessPool& pool=ProcessPool::instance();
     while(1)
     {
-        cout<<"a<size(exponent)>|d<addr>"<<endl;
+        cout<<"a <size(exponent)> |d <addr> |r <addr> <size(exponent)>"<<endl;
         unsigned int param;
         char op;
         string line;
@@ -261,6 +265,16 @@ int main()
                 ss>>hex>>param;
                 try {
                     pool.deallocate(reinterpret_cast<unsigned int*>(param));
+                } catch(exception& e) {
+                    cout<<typeid(e).name();
+                }
+                pool.printAllocatedBlocks();
+                break;
+            case 'r':
+                unsigned int addr, size;
+                ss>>hex>>addr>>dec>>size;
+                try {
+                    pool.reallocate(reinterpret_cast<unsigned int*>(addr), size);
                 } catch(exception& e) {
                     cout<<typeid(e).name();
                 }

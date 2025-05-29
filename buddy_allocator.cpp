@@ -525,6 +525,15 @@ static inline size_t buddy_tree_size_for_order(struct buddy_tree *t, uint8_t to)
 static void write_to_internal_position(struct buddy_tree* t, struct internal_position pos, size_t value);
 static size_t read_from_internal_position(unsigned char *bitset, struct internal_position pos);
 static inline unsigned char compare_with_internal_position(unsigned char *bitset, struct internal_position pos, size_t value);
+size_t bitset_sizeof(size_t elements);
+static inline size_t two_to_the_power_of(size_t order);
+static inline struct bitset_range bitset_range(size_t from_pos, size_t to_pos);
+static void bitset_set_range(unsigned char *bitset, struct bitset_range range);
+static inline bool bitset_test(const unsigned char *bitset, size_t pos);
+static size_t bitset_count_range(unsigned char *bitset, struct bitset_range range);
+static inline size_t integer_square_root(size_t op);
+static inline unsigned int popcount_byte(unsigned char b);
+static void bitset_clear_range(unsigned char *bitset,  struct bitset_range range);
 
 static inline size_t size_for_order(uint8_t order, uint8_t to) {
     size_t result = 0;
